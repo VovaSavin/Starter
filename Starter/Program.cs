@@ -12,23 +12,28 @@ class Program
     [STAThread]
     static void Main(string[] args)
     {
-        UnpackageArchive();
+        string nameAppDir = "Artilery_3027";
+        string workedDrive = SelectDrive();
+        CreateDirectories(workedDrive, nameAppDir);
+        UnpackageArchive(workedDrive, nameAppDir);
     }
 
-    protected static void UnpackageArchive()
+    protected static void UnpackageArchive(string workedDrive, string nameAppDir)
         // Розпаковує архів з основним файлом та допоміжними файлами
     {
-        CreateDirectories();
         string myPath = AppDomain.CurrentDomain.BaseDirectory;
-        string zipName = "Обробка витрат ВП_08_1.20252.zip";
-        DirectoryInfo parentDirectory = Directory.GetParent(Directory.GetParent(myPath).FullName);
+        string zipName = "packed.zip";
+        DirectoryInfo parentDirectory = Directory.GetParent(
+            Directory.GetParent(myPath).FullName
+        );
         if (parentDirectory != null)
         {
             string toZip = Path.Combine(parentDirectory.FullName, zipName);
-            if(File.Exists(toZip))
+            string pathDestination = Path.Combine(workedDrive, nameAppDir, "WorkFile");
+            if (File.Exists(toZip))
             {
                 Console.WriteLine("Архів знайдено.");
-                string pathDestination = Path.Combine(SelectDrive(), "Artilery", "WorkFile");
+                
                 ZipFile.ExtractToDirectory(toZip, pathDestination);
                 Console.WriteLine(
                     $"Архів розпаковано в директорію: {pathDestination}.", pathDestination
@@ -39,14 +44,13 @@ class Program
                     $"Архіву не знайдено за цією адресою: {toZip}.\nВидобуття не відбулося.\nВиберіть файл.", 
                     toZip
                 );
-
+                
                 // Відкриваємо провідник для вибору файлу
                 string openedFile = OpenExplorerAndGetFile(
                     "Архіви zip (*.zip)|*.zip|All files (*.*)|*.*"
                 );
                 if (openedFile != "")
                 {
-                    string pathDestination = Path.Combine(SelectDrive(), "Artilery", "WorkFile");
                     ZipFile.ExtractToDirectory(openedFile, pathDestination);
                     Console.WriteLine(
                         $"Архів розпаковано в директорію: {pathDestination}.", pathDestination
@@ -56,17 +60,22 @@ class Program
                     Console.WriteLine("Вибір файлу не відбувся. Завершення роботи програми.");
                 }
             }
+            // Виклик PowerShell скрипта для зміни макросів
+            CallPowerShellScript(
+                Path.Combine(myPath, "edit.ps1"), 
+                Path.Combine(pathDestination, GetFirstFile(pathDestination))
+            );
         }
     }
 
-    protected static void CreateDirectories()
+    protected static void CreateDirectories(string drive, string nameAppDir)
     // Створює директорії для звітів, бекапів та самого файлу
     {
-        string drive = SelectDrive(true);
+        Console.WriteLine("Перевірка наявності директорій.");
         string[] dirs = [
-            Path.Combine(drive, "Artilery", "Reports"),
-            Path.Combine(drive, "Artilery", "Backups"),
-            Path.Combine(drive, "Artilery", "WorkFile"),
+            Path.Combine(drive, nameAppDir, "Reports"),
+            Path.Combine(drive, nameAppDir, "Backups"),
+            Path.Combine(drive, nameAppDir, "WorkFile"),
         ];
         foreach(string dir in dirs)
         {
@@ -78,27 +87,16 @@ class Program
         }
     }
 
-    protected static string SelectDrive(bool info=false)
-        // Повертає локальний диск для встановлення файлу
+    protected static string SelectDrive()
+    // Повертає локальний диск для встановлення файлу
     {
-        if(info)
-        {
-            Console.WriteLine("Визначення томів в системі.");
-        }
+        
         DriveInfo[] allDrive = DriveInfo.GetDrives();
         if(allDrive.Length > 1)
         {
-            if(info)
-            {
-                Console.WriteLine("Дані будуть встановлені на диск {0}.", allDrive[1].Name);
-            }
             return allDrive[1].Name;
         } else
         {
-            if (info)
-            {
-                Console.WriteLine("Дані будуть встановлені на диск {0}.", allDrive[0].Name);
-            }
             return allDrive[0].Name;
         }
     }
@@ -131,5 +129,72 @@ class Program
 
         }
         return selectedFilePath;
+    }
+
+    private static void CallPowerShellScript(string scriptPath, string fileExcelPath)
+    // Викликає PowerShell скрипт. Для роботи з COM об'єктами
+    {
+        // Перевірка, чи існує файл
+        if (!File.Exists(fileExcelPath))
+        {
+            Console.WriteLine("Робочого файлу для обробки не знайдено. (CallPowerShellScript)");
+            return;
+        }
+        if(!File.Exists(scriptPath))
+        {
+            Console.WriteLine("Скрипт не знайдено.");
+            return;
+        } else
+        {
+            // Створення нового процесу
+            Process process = new Process();
+
+            // Запуск скрипта
+            process.StartInfo.FileName = "powershell.exe";
+
+            // -ExecutionPolicy ByPass обходить політику виконання скриптів
+            // -File вказує, що буде запускатися файл
+            process.StartInfo.Arguments = $"-ExecutionPolicy ByPass -File \"{scriptPath}\" -PathFileExcel \"{fileExcelPath}\"";
+
+            // Не показувати вікно консолі
+            process.StartInfo.CreateNoWindow = true;
+
+            // Не використовувати оболонку ОС
+            process.StartInfo.UseShellExecute = false;
+
+            try
+            {
+                Console.WriteLine("Запуск скрипту зміни макросів.");
+
+                // Запуск процесу
+                process.Start();
+
+                // Очікування завершення процесу
+                process.WaitForExit();
+
+                Console.WriteLine("Скрипт завершив роботу.");
+                Console.WriteLine($"Код виходу: {process.ExitCode}");
+            } catch (Exception ex)
+            {
+                Console.WriteLine($"Сталася помилка: {ex.Message}");
+            }
+
+        }
+    }
+
+    private static string GetFirstFile(string pathToFile)
+    {
+        // Повертає файл з директорії
+        DirectoryInfo dirInfo = new DirectoryInfo(pathToFile);
+        FileInfo[] files = dirInfo.GetFiles();
+        if (files.Length > 0)
+        {
+            return files[0].FullName;
+        }
+        else
+        {
+            Console.WriteLine("Робочого файлу у директорії не знайдено. (GetFirstFile)");
+            return "";
+        }
     }
 }
