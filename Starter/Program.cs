@@ -5,8 +5,7 @@ using System.IO.Compression; // Для розпакування архівів
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Diagnostics; // Для запуску провідника
-using Excel = Microsoft.Office.Interop.Excel;
-//using VBIDE = Microsoft.Vbe.Interop;
+
 
 class Program
 {
@@ -132,26 +131,5 @@ class Program
 
         }
         return selectedFilePath;
-    }
-
-    public static void IsVba()
-    {
-        try
-        {
-            Type vbaType = Type.GetTypeFromProgID("VBIDE.Application");
-            if (vbaType != null)
-            {
-                object vbaApp = Activator.CreateInstance(vbaType);
-                Console.WriteLine("VBA доступний.");
-            }
-            else
-            {
-                Console.WriteLine("VBA не встановлено.");
-            }
-        }
-        catch
-        {
-            Console.WriteLine("VBA не встановлено або недоступно.");
-        }
     }
 }
