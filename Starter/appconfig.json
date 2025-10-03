@@ -1,0 +1,17 @@
+{
+  "exclude": [
+    "**/bin",
+    "**/bower_components",
+    "**/jspm_packages",
+    "**/node_modules",
+    "**/obj",
+    "**/platforms"
+  ],
+  "Settings": {
+    "AppDirAll": "Artilery_3027",
+    "WorkFileDir": "WorkFile",
+    "BackUpDir": "Backups",
+    "ReportDir": "Reports",
+    "NameDirStarter": "StarterShootCounter"
+  }
+}
