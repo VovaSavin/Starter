@@ -4,6 +4,30 @@
     [string]$PathToBackup
 )
 
+$officeVersions = "16.0", "15.0", "14.0", "12.0" # Office 365/2019/2016, 2013, 2010, 2007
+$isEnabled = $false
+
+foreach ($version in $officeVersions) {
+    $path = "HKCU:\Software\Microsoft\Office\$version\Excel\Security"
+    if (Test-Path $path) {
+        $value = (Get-ItemProperty -Path $path -Name "AccessVBOM" -ErrorAction SilentlyContinue).AccessVBOM
+        if ($value -eq 1) {
+            Write-Host "✅ Знайдено увімкнений параметр для Office версії $version." -ForegroundColor Green
+            $isEnabled = $true
+            break # Виходимо з циклу, бо вже знайшли увімкнений параметр
+        } else {
+            # Встановлюємо значення 1 (увімкнути)
+            Set-ItemProperty -Path $path -Name "AccessVBOM" -Value 1 -Type DWord
+
+            Write-Host "Параметр 'Довіряти доступ до об'єктної моделі VBA' було увімкнено."
+        }
+    }
+}
+
+if (-not $isEnabled) {
+    Write-Host "❌ Доступ до об'єктної моделі VBA вимкнено для всіх знайдених версій Office." -ForegroundColor Yellow
+}
+
 $excel = New-Object -ComObject Excel.Application
 $excel.Visible = $true
 

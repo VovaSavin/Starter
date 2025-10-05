@@ -33,17 +33,26 @@ class Program
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
                 );
+                Console.WriteLine(nameAppDir);
                 return;
             }
-            string workFile = "WorkFile";
+            string workFile = config.GetSection("Settings.WorkFileDir").Value;
             string workedDrive = SelectDrive();
             CreateDirectories(workedDrive, nameAppDir);
 
             UnpackageArchive(
-                Path.Combine(workedDrive, nameAppDir, "Reports"),
-                Path.Combine(workedDrive, nameAppDir, "Backups"),
-                Path.Combine(workedDrive, nameAppDir, workFile, "StarterShootCounter"),
-                Path.Combine(workedDrive, nameAppDir, workFile)
+                Path.Combine(
+                    workedDrive, nameAppDir, config.GetSection("Settings.ReportDir").Value
+                ),
+                Path.Combine(
+                    workedDrive, nameAppDir, config.GetSection("Settings.BackUpDir").Value
+                ),
+                Path.Combine(
+                    workedDrive, nameAppDir, workFile, config.GetSection("Settings.NameDirStarter").Value
+                ),
+                Path.Combine(
+                    workedDrive, nameAppDir, workFile
+                 )
             );
         } else
         {
