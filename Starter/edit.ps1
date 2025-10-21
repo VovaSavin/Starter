@@ -18,6 +18,7 @@ foreach ($version in $officeVersions) {
         } else {
             # Встановлюємо значення 1 (увімкнути)
             Set-ItemProperty -Path $path -Name "AccessVBOM" -Value 1 -Type DWord
+            $isEnabled = $true
 
             Write-Host "Параметр 'Довіряти доступ до об'єктної моделі VBA' було увімкнено."
         }

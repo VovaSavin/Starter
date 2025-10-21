@@ -1,12 +1,4 @@
 {
-  "exclude": [
-    "**/bin",
-    "**/bower_components",
-    "**/jspm_packages",
-    "**/node_modules",
-    "**/obj",
-    "**/platforms"
-  ],
   "Settings": {
     "AppDirAll": "Artilery_3027",
     "WorkFileDir": "WorkFile",
