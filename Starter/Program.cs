@@ -189,6 +189,15 @@ namespace Starter
 
                 // Копіюємо себе в директорію з робочим файлом
                 SelfCopy(parentDirectory.FullName, thisDirectory, true);
+
+                // Виводимо інформацію про успішне завершення програми
+                MessageBox.Show(
+                    "Підготовка файлу завершена.\n" +
+                    "Тепер ви можете успішно з ним працювати.",
+                    "Готово",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
             }
         }
 
@@ -402,6 +411,12 @@ namespace Starter
                     // Виводимо помилки
                     {
                         Console.WriteLine(error.ToString());
+                        MessageBox.Show(
+                            error.ToString()+ "\n" + "Помилка при спробі зміни макросів.",
+                            "Помилка виконання скрипта",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error
+                        );
                     }
                 }
             }
@@ -509,7 +524,11 @@ namespace Starter
         {
             using(ZipArchive arch = ZipFile.OpenRead(pathArchiveZip)) // Створення об'єкта архіву з його переглядом
             {
-                return arch.Entries.ToList();
+                if (arch.Entries.Count > 0)
+                {
+                    return arch.Entries.ToList();
+                }
+                return [];
             }
         }
     }
