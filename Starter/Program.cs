@@ -8,7 +8,9 @@ using System.Diagnostics; // Для запуску провідника
 using System.Management.Automation; // Для роботи з PowerShell
 using System.Reflection; // Для роботи з PowerShell
 using Microsoft.Win32;
-using Json.More; // Для перевірки реєстру на наявність Excel
+using Json.More;
+using Microsoft.VisualBasic;
+using System.Collections.ObjectModel; // Для перевірки реєстру на наявність Excel
 
 namespace Starter
 {
@@ -93,7 +95,7 @@ namespace Starter
         // Розпаковує архів з основним файлом та допоміжними файлами
         {
             string myPath = AppDomain.CurrentDomain.BaseDirectory;
-            string zipName = "packed.zip";
+            string zipName = "packed.zip"; 
             // Отримуємо батьківську директорію
             DirectoryInfo parentDirectory = Directory.GetParent(
                 Directory.GetParent(myPath).FullName
@@ -127,22 +129,50 @@ namespace Starter
                             toZip
                         );
 
-
-                        // Відкриваємо провідник для вибору файлу
+                        // Вибираємо та перевіряємо тип вибраного файлу
                         string openedFile = CheckTypeFile("zip");
 
-                        // Якщо файл вибрано, розпаковуємо його
+                        // Якщо файл не пустий
                         if (openedFile != "")
                         {
-                            ZipFile.ExtractToDirectory(openedFile, pathDestination);
-                            Console.WriteLine(
-                                $"Архів розпаковано в директорію: {pathDestination}.", pathDestination
-                            );
+                            // Дивимось, що є в архіві
+                            List<ZipArchiveEntry> inArchive = GetDataArchive(openedFile);
+                            if (inArchive.Count == 0 || inArchive.Count > 1)
+                            {
+                                MessageBox.Show(
+                                    "Виберіть архів з одним файлом типу *.xlsm.",
+                                    "Даний архів містить більше ніж один файл або пустий.",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error
+                                );
+                                return;
+                            }
+
+                            // Якщо файл в архіві є xlsm
+                            if (OnlyCheckTypeFile("xlsm", inArchive.First().ToString()))
+                            {
+                                ZipFile.ExtractToDirectory(openedFile, pathDestination);
+                                Console.WriteLine(
+                                    $"Архів розпаковано в директорію: {pathDestination}.", pathDestination
+                                );
+                            } else
+                            {
+                                MessageBox.Show(
+                                    "Файл не є *.xlsm.",
+                                    "Даний архів містить файл відмінний від *.xlsm.",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Error
+                                );
+                                return;
+                            }
                         }
                         else
                         {
-                            Console.WriteLine(
-                                "Вибір файлу не відбувся. Завершення роботи програми."
+                            MessageBox.Show(
+                                    "Не вибраний файл.",
+                                    "Ви не вибрали  файл.",
+                                    MessageBoxButtons.OK,
+                                    MessageBoxIcon.Information
                                 );
                             return;
                         }
@@ -471,6 +501,15 @@ namespace Starter
             } else
             {
                 return false;
+            }
+        }
+
+        protected static List<ZipArchiveEntry> GetDataArchive(string pathArchiveZip)
+        // Повертає вміст архіву
+        {
+            using(ZipArchive arch = ZipFile.OpenRead(pathArchiveZip)) // Створення об'єкта архіву з його переглядом
+            {
+                return arch.Entries.ToList();
             }
         }
     }
